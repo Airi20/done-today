@@ -32,11 +32,7 @@ function App() {
   const lastEnterTimeRef = useRef(0);
   const lastPinEnterTimeRef = useRef(0);
 
-  useEffect(() => {
-    if (Notification.permission !== 'granted') {
-      Notification.requestPermission();
-    }
-  }, []);
+ 
 
   const addRecord = () => {
     if (!input.trim()) return;
