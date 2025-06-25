@@ -1,3 +1,8 @@
+// ここからのコードに、以下の3機能を追加：
+// - パスコード入力画面に画像を追加してデコる
+// - 通知時間を設定して、時間になったらローカル通知
+// - 「お疲れ様」ボタンでランダムメッセージ
+
 import React, { useState, useEffect, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -22,8 +27,30 @@ function App() {
   const [pinError, setPinError] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(pin === '' ? false : false);
   const [pinStep, setPinStep] = useState(pin ? 'enter' : 'set');
+  const [notificationTime, setNotificationTime] = useState(localStorage.getItem('notifyTime') || '20:00');
+  const [rewardMessage, setRewardMessage] = useState('');
+
   const lastEnterTimeRef = useRef(0);
   const lastPinEnterTimeRef = useRef(0);
+
+  useEffect(() => {
+    if (Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      const [hour, minute] = notificationTime.split(':').map(Number);
+      if (now.getHours() === hour && now.getMinutes() === minute) {
+        if (Notification.permission === 'granted') {
+          new Notification('そろそろ「できたこと」書こう✍️');
+        }
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [notificationTime]);
 
   useEffect(() => {
     localStorage.setItem('doneTodayRecords', JSON.stringify(records));
@@ -33,19 +60,16 @@ function App() {
     localStorage.setItem('doneTodayPoints', JSON.stringify(points));
   }, [points]);
 
+  useEffect(() => {
+    localStorage.setItem('notifyTime', notificationTime);
+  }, [notificationTime]);
+
   const addRecord = () => {
     if (!input.trim()) return;
     const timestamp = new Date().toLocaleTimeString();
-
-    setRecords(prev => [
-      ...prev,
-      {
-        id: Date.now(),
-        text: input.trim(),
-        date: selectedDate.toLocaleDateString(),
-        time: timestamp,
-      },
-    ]);
+    setRecords(prev => [...prev, {
+      id: Date.now(), text: input.trim(), date: selectedDate.toLocaleDateString(), time: timestamp
+    }]);
     setPoints(prev => prev + 10);
     setInput('');
     setSelectedDate(new Date());
@@ -54,22 +78,18 @@ function App() {
 
   const handleKeyDown = (e) => {
     const now = Date.now();
-    if (e.key === 'Enter') {
-      if (now - lastEnterTimeRef.current < 500) {
-        addRecord();
-      }
-      lastEnterTimeRef.current = now;
+    if (e.key === 'Enter' && now - lastEnterTimeRef.current < 500) {
+      addRecord();
     }
+    lastEnterTimeRef.current = now;
   };
 
   const handlePinKeyDown = (e) => {
     const now = Date.now();
-    if (e.key === 'Enter') {
-      if (now - lastPinEnterTimeRef.current < 500) {
-        handlePinSubmit();
-      }
-      lastPinEnterTimeRef.current = now;
+    if (e.key === 'Enter' && now - lastPinEnterTimeRef.current < 500) {
+      handlePinSubmit();
     }
+    lastPinEnterTimeRef.current = now;
   };
 
   const getPraiseMessage = () => {
@@ -79,6 +99,7 @@ function App() {
   };
 
   const gachaResults = ['大吉🎉', '中吉✨', '小吉👍', '明日もきっといい天気☀️'];
+  const rewardMessages = ['よく頑張ったね🥺', '頭バチバチ冴えててエモすぎん？尊いわ✨', '今日も生きててえらい！😊', '静寂の中で響く君の足跡は、未来への序章💮','君の頭脳はニュートンのリンゴより重力を感じさせる🍎','アルゴリズムの最適解は君の努力に他ならない🔢','おお、若いのにようやっとるのう。わしも嬉しいわい👴','おっきな声で言うけど、だいすきー！👧','頑張り屋さん！🏅','負けないで！💥','自信持って！💎','その情熱最高！🔥','君の努力は、星空のように無数の瞬きを放ち、周りの暗闇を優しく照らす光そのものだ。だから、今日も迷わず輝き続けてほしい🤣','いと心うつくしき君が姿、春の霞のごとくやわらかく、もののあはれをしる人のごとし。今日もいと愛おし🥺','マジ、今日もお前めっちゃ愛おしいわ。春霞みたいにふわっとしてて、心にズッキューン！やばい、尊すぎて草。'];
 
   const handleGacha = () => {
     if (points < 10) return;
@@ -86,10 +107,6 @@ function App() {
     setGachaMessage(gachaResults[randomIndex]);
     setPoints(prev => prev - 10);
   };
-
-  const filteredRecords = records.filter(
-    r => r.date === selectedDate.toLocaleDateString()
-  );
 
   const handlePinSubmit = () => {
     if (pinStep === 'set') {
@@ -111,10 +128,19 @@ function App() {
     }
   };
 
+  const filteredRecords = records.filter(r => r.date === selectedDate.toLocaleDateString());
+
+  const showReward = () => {
+    const msg = rewardMessages[Math.floor(Math.random() * rewardMessages.length)];
+    setRewardMessage(msg);
+  };
+
   if (!isUnlocked) {
     return (
       <div style={styles.container}>
         <div style={styles.card}>
+          
+          <div style={{ fontSize: '2rem', textAlign: 'center', marginBottom: 10 }}>😊💕</div>
           <h2 style={styles.heading}>{pinStep === 'set' ? 'パスコードを設定してください' : 'パスコードを入力してください'}</h2>
           <input
             type="password"
@@ -135,30 +161,17 @@ function App() {
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={styles.characterContainer}>
-          <img
-            src="/tori 2025-06-26 013122.png"
-            alt="手書きキャラ"
-            style={styles.characterImage}
-          />
+          <img src="/tori 2025-06-26 013122.png" alt="手書きキャラ" style={styles.characterImage} />
         </div>
 
-        {getPraiseMessage() && (
-          <div style={styles.congratsText}>{getPraiseMessage()}</div>
-        )}
+        {getPraiseMessage() && <div style={styles.congratsText}>{getPraiseMessage()}</div>}
+        {gachaMessage && <div style={styles.gachaMessage}>{gachaMessage}</div>}
+        {rewardMessage && <div style={{ textAlign: 'center', fontSize: '1.2rem', margin: '1rem 0', color: '#ff3399' }}>{rewardMessage}</div>}
 
-        {gachaMessage && (
-          <div style={styles.gachaMessage}>{gachaMessage}</div>
-        )}
 
-        <div style={styles.pointsText}>
-          ポイント: {points}pt
-        </div>
+        <div style={styles.pointsText}>ポイント: {points}pt</div>
 
-        {points >= 10 && (
-          <button onClick={handleGacha} style={styles.gachaButton}>
-            ガチャを弾く🎰
-          </button>
-        )}
+        {points >= 10 && <button onClick={handleGacha} style={styles.gachaButton}>ガチャを弾く🎰</button>}
 
         <h1 style={styles.heading}>今日できたこと😎</h1>
 
@@ -182,15 +195,27 @@ function App() {
           />
         </div>
 
-        <button onClick={addRecord} style={styles.button}>追加</button>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+          <button onClick={addRecord} style={styles.button}>追加</button>
+          <button onClick={showReward} style={{ ...styles.button, backgroundColor: '#ff3399' }}>お疲れ様</button>
+
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label>通知時間（HH:mm）: </label>
+          <input
+            type="time"
+            value={notificationTime}
+            onChange={e => setNotificationTime(e.target.value)}
+            style={{ padding: 8, borderRadius: 8, border: '1px solid #ccc' }}
+          />
+        </div>
 
         <ul style={styles.list}>
           {[...filteredRecords].reverse().map(r => (
             <li key={r.id} style={styles.item}>
               <div style={styles.text}>{r.text}</div>
-              <div style={styles.timestamp}>
-                {r.date} - {r.time}
-              </div>
+              <div style={styles.timestamp}>{r.date} - {r.time}</div>
             </li>
           ))}
         </ul>
