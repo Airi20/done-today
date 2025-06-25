@@ -16,6 +16,11 @@ function App() {
   const [input, setInput] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [gachaMessage, setGachaMessage] = useState('');
+  const [pin, setPin] = useState(() => localStorage.getItem('doneTodayPin') || '');
+  const [tempPin, setTempPin] = useState('');
+  const [enteredPin, setEnteredPin] = useState('');
+  const [isUnlocked, setIsUnlocked] = useState(pin === '' ? false : false);
+  const [pinStep, setPinStep] = useState(pin ? 'enter' : 'set');
   const lastEnterTimeRef = useRef(0);
 
   useEffect(() => {
@@ -70,10 +75,41 @@ function App() {
     setPoints(prev => prev - 10);
   };
 
-  // 日付でフィルター
   const filteredRecords = records.filter(
     r => r.date === selectedDate.toLocaleDateString()
   );
+
+  const handlePinSubmit = () => {
+    if (pinStep === 'set') {
+      if (tempPin.length >= 4) {
+        localStorage.setItem('doneTodayPin', tempPin);
+        setPin(tempPin);
+        setIsUnlocked(true);
+      }
+    } else {
+      if (enteredPin === pin) {
+        setIsUnlocked(true);
+      }
+    }
+  };
+
+  if (!isUnlocked) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <h2 style={styles.heading}>{pinStep === 'set' ? 'パスコードを設定してください' : 'パスコードを入力してください'}</h2>
+          <input
+            type="password"
+            value={pinStep === 'set' ? tempPin : enteredPin}
+            onChange={e => pinStep === 'set' ? setTempPin(e.target.value) : setEnteredPin(e.target.value)}
+            placeholder="4文字以上のパスコード"
+            style={styles.input}
+          />
+          <button onClick={handlePinSubmit} style={styles.button}>OK</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
