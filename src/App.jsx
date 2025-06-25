@@ -8,6 +8,11 @@ function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [points, setPoints] = useState(() => {
+    const saved = localStorage.getItem('doneTodayPoints');
+    return saved ? JSON.parse(saved) : 0;
+  });
+
   const [input, setInput] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const lastEnterTimeRef = useRef(0);
@@ -16,11 +21,17 @@ function App() {
     localStorage.setItem('doneTodayRecords', JSON.stringify(records));
   }, [records]);
 
+  useEffect(() => {
+    localStorage.setItem('doneTodayPoints', JSON.stringify(points));
+  }, [points]);
+
   const addRecord = () => {
     if (!input.trim()) return;
     const timestamp = new Date().toLocaleTimeString();
-    setRecords([
-      ...records,
+
+    // stateをまとめて更新（多少早く感じるかも）
+    setRecords(prev => [
+      ...prev,
       {
         id: Date.now(),
         text: input.trim(),
@@ -28,6 +39,7 @@ function App() {
         time: timestamp,
       },
     ]);
+    setPoints(prev => prev + 10);
     setInput('');
     setSelectedDate(new Date());
   };
@@ -42,6 +54,13 @@ function App() {
     }
   };
 
+  // 褒めメッセージの決定
+  const getPraiseMessage = () => {
+    if (points >= 200) return '天才！🔥 200ポイント達成！';
+    if (points >= 100) return 'さすが！👏 100ポイント達成！';
+    return '';
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.card}>
@@ -51,6 +70,14 @@ function App() {
             alt="手書きキャラ"
             style={styles.characterImage}
           />
+        </div>
+
+        {getPraiseMessage() && (
+          <div style={styles.congratsText}>{getPraiseMessage()}</div>
+        )}
+
+        <div style={styles.pointsText}>
+          ポイント: {points}pt
         </div>
 
         <h1 style={styles.heading}>今日できたこと😎</h1>
@@ -115,13 +142,27 @@ const styles = {
   characterContainer: {
     display: 'flex',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   characterImage: {
     width: 250,
     height: 250,
     borderRadius: '50%',
     objectFit: 'contain',
+  },
+  congratsText: {
+    fontSize: '1.2rem',
+    fontWeight: 'bold',
+    color: '#28a745',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  pointsText: {
+    fontSize: '1.1rem',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 16,
+    color: '#007bff',
   },
   heading: {
     fontSize: '1.5rem',
