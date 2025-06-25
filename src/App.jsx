@@ -28,7 +28,7 @@ function App() {
       },
     ]);
     setInput('');
-    setSelectedDate(new Date()); // デフォルトに戻す
+    setSelectedDate(new Date());
   };
 
   return (
@@ -84,11 +84,13 @@ function App() {
 const styles = {
   container: {
     minHeight: '100vh',
+    width: '100vw',           // 画面幅いっぱいに拡げる
     display: 'flex',
-    justifyContent: 'center', // スマホでも中央揃え
+    justifyContent: 'center', 
     alignItems: 'center',
     backgroundColor: '#fdf6e3',
     padding: 20,
+    boxSizing: 'border-box',  // パディング含めて幅調整
   },
   card: {
     backgroundColor: 'white',
@@ -105,10 +107,10 @@ const styles = {
     marginBottom: 16,
   },
   characterImage: {
-    width: 70,
-    height: 70,
+    width: 50,     // 小さくした
+    height: 50,    // 小さくした
     borderRadius: '50%',
-    objectFit: 'cover',
+    objectFit: 'contain',  // 見切れ防止
   },
   heading: {
     fontSize: '1.5rem',
@@ -119,7 +121,7 @@ const styles = {
     marginBottom: 8,
   },
   input: {
-    width: '95%',  // 少しだけ小さくした
+    width: '95%',  
     padding: 10,
     fontSize: '1rem',
     borderRadius: 8,
