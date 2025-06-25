@@ -19,9 +19,11 @@ function App() {
   const [pin, setPin] = useState(() => localStorage.getItem('doneTodayPin') || '');
   const [tempPin, setTempPin] = useState('');
   const [enteredPin, setEnteredPin] = useState('');
+  const [pinError, setPinError] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(pin === '' ? false : false);
   const [pinStep, setPinStep] = useState(pin ? 'enter' : 'set');
   const lastEnterTimeRef = useRef(0);
+  const lastPinEnterTimeRef = useRef(0);
 
   useEffect(() => {
     localStorage.setItem('doneTodayRecords', JSON.stringify(records));
@@ -60,6 +62,16 @@ function App() {
     }
   };
 
+  const handlePinKeyDown = (e) => {
+    const now = Date.now();
+    if (e.key === 'Enter') {
+      if (now - lastPinEnterTimeRef.current < 500) {
+        handlePinSubmit();
+      }
+      lastPinEnterTimeRef.current = now;
+    }
+  };
+
   const getPraiseMessage = () => {
     if (points >= 200) return '天才！🔥 200ポイント達成！';
     if (points >= 100) return 'さすが！👏 100ポイント達成！';
@@ -85,10 +97,16 @@ function App() {
         localStorage.setItem('doneTodayPin', tempPin);
         setPin(tempPin);
         setIsUnlocked(true);
+        setPinError('');
+      } else {
+        setPinError('4桁以上の数字を入力してください（覚えておいてね）');
       }
     } else {
       if (enteredPin === pin) {
         setIsUnlocked(true);
+        setPinError('');
+      } else {
+        setPinError('パスコードが違います');
       }
     }
   };
@@ -102,10 +120,12 @@ function App() {
             type="password"
             value={pinStep === 'set' ? tempPin : enteredPin}
             onChange={e => pinStep === 'set' ? setTempPin(e.target.value) : setEnteredPin(e.target.value)}
-            placeholder="4文字以上のパスコード"
+            onKeyDown={handlePinKeyDown}
+            placeholder={pinStep === 'set' ? '4桁以上の数字を入力してください（覚えておいてね）' : 'パスコード'}
             style={styles.input}
           />
           <button onClick={handlePinSubmit} style={styles.button}>OK</button>
+          {pinError && <div style={{ color: 'red', marginTop: 8 }}>{pinError}</div>}
         </div>
       </div>
     );
