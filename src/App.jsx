@@ -39,31 +39,6 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      const [hour, minute] = notificationTime.split(':').map(Number);
-      if (now.getHours() === hour && now.getMinutes() === minute) {
-        if (Notification.permission === 'granted') {
-          new Notification('そろそろ「できたこと」書こう✍️');
-        }
-      }
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [notificationTime]);
-
-  useEffect(() => {
-    localStorage.setItem('doneTodayRecords', JSON.stringify(records));
-  }, [records]);
-
-  useEffect(() => {
-    localStorage.setItem('doneTodayPoints', JSON.stringify(points));
-  }, [points]);
-
-  useEffect(() => {
-    localStorage.setItem('notifyTime', notificationTime);
-  }, [notificationTime]);
-
   const addRecord = () => {
     if (!input.trim()) return;
     const timestamp = new Date().toLocaleTimeString();
