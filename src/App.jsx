@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -10,6 +10,7 @@ function App() {
 
   const [input, setInput] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const lastEnterTimeRef = useRef(0);
 
   useEffect(() => {
     localStorage.setItem('doneTodayRecords', JSON.stringify(records));
@@ -31,10 +32,19 @@ function App() {
     setSelectedDate(new Date());
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      const now = Date.now();
+      if (now - lastEnterTimeRef.current < 500) { // 0.5秒以内に2回目のEnter
+        addRecord();
+      }
+      lastEnterTimeRef.current = now;
+    }
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        {/* キャラだけ表示 */}
         <div style={styles.characterContainer}>
           <img
             src="/tori 2025-06-26 013122.png"
@@ -51,6 +61,7 @@ function App() {
             onChange={e => setInput(e.target.value)}
             placeholder="できたことを書こう"
             style={styles.input}
+            onKeyDown={handleKeyDown}
           />
         </div>
 
@@ -84,13 +95,13 @@ function App() {
 const styles = {
   container: {
     minHeight: '100vh',
-    width: '100vw',           // 画面幅いっぱいに拡げる
+    width: '100vw',
     display: 'flex',
-    justifyContent: 'center', 
+    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fdf6e3',
     padding: 20,
-    boxSizing: 'border-box',  // パディング含めて幅調整
+    boxSizing: 'border-box',
   },
   card: {
     backgroundColor: 'white',
@@ -107,10 +118,10 @@ const styles = {
     marginBottom: 16,
   },
   characterImage: {
-    width: 250,     // 小さくした
-    height: 250,    // 小さくした
+    width: 250,
+    height: 250,
     borderRadius: '50%',
-    objectFit: 'contain',  // 見切れ防止
+    objectFit: 'contain',
   },
   heading: {
     fontSize: '1.5rem',
@@ -121,7 +132,7 @@ const styles = {
     marginBottom: 8,
   },
   input: {
-    width: '95%',  
+    width: '95%',
     padding: 10,
     fontSize: '1rem',
     borderRadius: 8,
