@@ -1,56 +1,100 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function App() {
-  const [inputText, setInputText] = useState('');
-  const [records, setRecords] = useState([]);
+  const [records, setRecords] = useState(() => {
+    const saved = localStorage.getItem('doneTodayRecords');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [input, setInput] = useState('');
 
   useEffect(() => {
-    const saved = localStorage.getItem('todayRecords');
-    if (saved) setRecords(JSON.parse(saved));
-  }, []);
+    localStorage.setItem('doneTodayRecords', JSON.stringify(records));
+  }, [records]);
 
-  const saveRecord = () => {
-    if (!inputText.trim()) return;
-    const newRecord = {
-      id: Date.now(),
-      text: inputText.trim(),
-      date: new Date().toLocaleDateString(),
-    };
-    const updated = [newRecord, ...records];
-    setRecords(updated);
-    localStorage.setItem('todayRecords', JSON.stringify(updated));
-    setInputText('');
+  const addRecord = () => {
+    if (!input.trim()) return;
+    setRecords([...records, { id: Date.now(), text: input.trim() }]);
+    setInput('');
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '2rem auto', fontFamily: 'sans-serif' }}>
-      <h2>今日できたことアプリ ✨</h2>
-      <input
-        type="text"
-        placeholder="今日できたことを1行で"
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && saveRecord()}
-        style={{ width: '100%', padding: '0.5rem', fontSize: '1rem' }}
-      />
-      <button onClick={saveRecord} style={{ marginTop: '0.5rem', width: '100%', padding: '0.5rem' }}>
-        保存
-      </button>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h1 style={styles.heading}>今日できたこと</h1>
+        <div style={styles.inputContainer}>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="できたことを書こう"
+            style={styles.input}
+          />
+          <button onClick={addRecord} style={styles.button}>追加</button>
+        </div>
 
-      <hr style={{ margin: '1.5rem 0' }} />
-
-      <h3>記録一覧</h3>
-      {records.length === 0 && <p>まだ記録はありません。</p>}
-      <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-        {records.map(({ id, text, date }) => (
-          <li key={id} style={{ padding: '0.5rem 0', borderBottom: '1px solid #ddd' }}>
-            <small style={{ color: '#666' }}>{date}</small>
-            <div>{text}</div>
-          </li>
-        ))}
-      </ul>
+        <ul style={styles.list}>
+          {records.map(r => (
+            <li key={r.id} style={styles.item}>{r.text}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
+
+const styles = {
+  container: {
+    minHeight: '100vh',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fdf6e3',
+    padding: '20px',
+  },
+  card: {
+    backgroundColor: 'white',
+    padding: '20px',
+    borderRadius: '16px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    width: '100%',
+    maxWidth: '400px',
+  },
+  heading: {
+    fontSize: '1.5rem',
+    textAlign: 'center',
+    marginBottom: '1rem',
+  },
+  inputContainer: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '1rem',
+  },
+  input: {
+    flex: 1,
+    padding: '10px',
+    fontSize: '1rem',
+    borderRadius: '8px',
+    border: '1px solid #ccc',
+  },
+  button: {
+    padding: '10px 16px',
+    fontSize: '1rem',
+    borderRadius: '8px',
+    backgroundColor: '#007bff',
+    color: 'white',
+    border: 'none',
+  },
+  list: {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0,
+  },
+  item: {
+    backgroundColor: '#f1f1f1',
+    padding: '10px',
+    marginBottom: '6px',
+    borderRadius: '6px',
+  },
+};
 
 export default App;
