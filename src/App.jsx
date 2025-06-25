@@ -34,19 +34,16 @@ function App() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        {/* キャラ＋吹き出し */}
+        {/* キャラだけ表示 */}
         <div style={styles.characterContainer}>
           <img
-            src="/screenshot_20250626_010256.png"
+            src="/tori 2025-06-26 013122.png"
             alt="手書きキャラ"
             style={styles.characterImage}
           />
-          <div style={styles.speechBubble}>
-            今日もよく頑張ったね！
-          </div>
         </div>
 
-        <h1 style={styles.heading}>今日できたこと</h1>
+        <h1 style={styles.heading}>今日できたこと😎</h1>
 
         <div style={styles.inputContainer}>
           <input
@@ -104,7 +101,7 @@ const styles = {
   },
   characterContainer: {
     display: 'flex',
-    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
   characterImage: {
@@ -112,17 +109,6 @@ const styles = {
     height: 70,
     borderRadius: '50%',
     objectFit: 'cover',
-    marginRight: 12,
-    flexShrink: 0,
-  },
-  speechBubble: {
-    backgroundColor: '#007bff',
-    color: 'white',
-    padding: '12px 16px',
-    borderRadius: 20,
-    maxWidth: '70%',
-    fontSize: '1rem',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
   },
   heading: {
     fontSize: '1.5rem',
@@ -133,7 +119,7 @@ const styles = {
     marginBottom: 8,
   },
   input: {
-    width: '100%',
+    width: '95%',  // 少しだけ小さくした
     padding: 10,
     fontSize: '1rem',
     borderRadius: 8,
