@@ -42,12 +42,12 @@ function App() {
     setPoints(prev => prev + 10);
     setInput('');
     setSelectedDate(new Date());
-    setGachaMessage('');  // ガチャメッセージはリセット
+    setGachaMessage('');
   };
 
   const handleKeyDown = (e) => {
+    const now = Date.now();
     if (e.key === 'Enter') {
-      const now = Date.now();
       if (now - lastEnterTimeRef.current < 500) {
         addRecord();
       }
@@ -67,8 +67,13 @@ function App() {
     if (points < 10) return;
     const randomIndex = Math.floor(Math.random() * gachaResults.length);
     setGachaMessage(gachaResults[randomIndex]);
-    setPoints(prev => prev - 10);  // ガチャ引くと10ポイント消費
+    setPoints(prev => prev - 10);
   };
+
+  // 日付でフィルター
+  const filteredRecords = records.filter(
+    r => r.date === selectedDate.toLocaleDateString()
+  );
 
   return (
     <div style={styles.container}>
@@ -85,7 +90,6 @@ function App() {
           <div style={styles.congratsText}>{getPraiseMessage()}</div>
         )}
 
-        {/* ガチャメッセージ表示（ポイント表示の上、褒め言葉の下） */}
         {gachaMessage && (
           <div style={styles.gachaMessage}>{gachaMessage}</div>
         )}
@@ -94,7 +98,6 @@ function App() {
           ポイント: {points}pt
         </div>
 
-        {/* ポイント10以上ならガチャボタン表示 */}
         {points >= 10 && (
           <button onClick={handleGacha} style={styles.gachaButton}>
             ガチャを弾く🎰
@@ -126,7 +129,7 @@ function App() {
         <button onClick={addRecord} style={styles.button}>追加</button>
 
         <ul style={styles.list}>
-          {[...records].reverse().map(r => (
+          {[...filteredRecords].reverse().map(r => (
             <li key={r.id} style={styles.item}>
               <div style={styles.text}>{r.text}</div>
               <div style={styles.timestamp}>
