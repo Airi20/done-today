@@ -15,6 +15,7 @@ function App() {
 
   const [input, setInput] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [gachaMessage, setGachaMessage] = useState('');
   const lastEnterTimeRef = useRef(0);
 
   useEffect(() => {
@@ -29,7 +30,6 @@ function App() {
     if (!input.trim()) return;
     const timestamp = new Date().toLocaleTimeString();
 
-    // stateをまとめて更新（多少早く感じるかも）
     setRecords(prev => [
       ...prev,
       {
@@ -42,23 +42,32 @@ function App() {
     setPoints(prev => prev + 10);
     setInput('');
     setSelectedDate(new Date());
+    setGachaMessage('');  // ガチャメッセージはリセット
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       const now = Date.now();
-      if (now - lastEnterTimeRef.current < 500) { // 0.5秒以内に2回目のEnter
+      if (now - lastEnterTimeRef.current < 500) {
         addRecord();
       }
       lastEnterTimeRef.current = now;
     }
   };
 
-  // 褒めメッセージの決定
   const getPraiseMessage = () => {
     if (points >= 200) return '天才！🔥 200ポイント達成！';
     if (points >= 100) return 'さすが！👏 100ポイント達成！';
     return '';
+  };
+
+  const gachaResults = ['大吉🎉', '中吉✨', '小吉👍', '明日もきっといい天気☀️'];
+
+  const handleGacha = () => {
+    if (points < 10) return;
+    const randomIndex = Math.floor(Math.random() * gachaResults.length);
+    setGachaMessage(gachaResults[randomIndex]);
+    setPoints(prev => prev - 10);  // ガチャ引くと10ポイント消費
   };
 
   return (
@@ -76,9 +85,21 @@ function App() {
           <div style={styles.congratsText}>{getPraiseMessage()}</div>
         )}
 
+        {/* ガチャメッセージ表示（ポイント表示の上、褒め言葉の下） */}
+        {gachaMessage && (
+          <div style={styles.gachaMessage}>{gachaMessage}</div>
+        )}
+
         <div style={styles.pointsText}>
           ポイント: {points}pt
         </div>
+
+        {/* ポイント10以上ならガチャボタン表示 */}
+        {points >= 10 && (
+          <button onClick={handleGacha} style={styles.gachaButton}>
+            ガチャを弾く🎰
+          </button>
+        )}
 
         <h1 style={styles.heading}>今日できたこと😎</h1>
 
@@ -157,12 +178,30 @@ const styles = {
     textAlign: 'center',
     marginBottom: 8,
   },
+  gachaMessage: {
+    fontSize: '1.2rem',
+    fontWeight: 'bold',
+    color: '#ff6600',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
   pointsText: {
     fontSize: '1.1rem',
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 16,
     color: '#007bff',
+  },
+  gachaButton: {
+    display: 'block',
+    margin: '0 auto 16px auto',
+    padding: '10px 20px',
+    fontSize: '1rem',
+    borderRadius: 8,
+    backgroundColor: '#ff6600',
+    color: 'white',
+    border: 'none',
+    cursor: 'pointer',
   },
   heading: {
     fontSize: '1.5rem',
