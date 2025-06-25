@@ -27,7 +27,6 @@ function App() {
   const [pinError, setPinError] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(pin === '' ? false : false);
   const [pinStep, setPinStep] = useState(pin ? 'enter' : 'set');
-  const [notificationTime, setNotificationTime] = useState(localStorage.getItem('notifyTime') || '20:00');
   const [rewardMessage, setRewardMessage] = useState('');
 
   const lastEnterTimeRef = useRef(0);
@@ -176,15 +175,6 @@ function App() {
 
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label>通知時間（HH:mm）: </label>
-          <input
-            type="time"
-            value={notificationTime}
-            onChange={e => setNotificationTime(e.target.value)}
-            style={{ padding: 8, borderRadius: 8, border: '1px solid #ccc' }}
-          />
-        </div>
 
         <ul style={styles.list}>
           {[...filteredRecords].reverse().map(r => (
