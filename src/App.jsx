@@ -1,8 +1,3 @@
-// ここからのコードに、以下の3機能を追加：
-// - パスコード入力画面に画像を追加してデコる
-// - 通知時間を設定して、時間になったらローカル通知
-// - 「お疲れ様」ボタンでランダムメッセージ
-
 import React, { useState, useEffect, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -12,12 +7,10 @@ function App() {
     const saved = localStorage.getItem('doneTodayRecords');
     return saved ? JSON.parse(saved) : [];
   });
-
   const [points, setPoints] = useState(() => {
     const saved = localStorage.getItem('doneTodayPoints');
     return saved ? JSON.parse(saved) : 0;
   });
-
   const [input, setInput] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [gachaMessage, setGachaMessage] = useState('');
@@ -25,25 +18,68 @@ function App() {
   const [tempPin, setTempPin] = useState('');
   const [enteredPin, setEnteredPin] = useState('');
   const [pinError, setPinError] = useState('');
-  const [isUnlocked, setIsUnlocked] = useState(pin === '' ? false : false);
+  const [isUnlocked, setIsUnlocked] = useState(pin === '' ? true : false);
   const [pinStep, setPinStep] = useState(pin ? 'enter' : 'set');
   const [rewardMessage, setRewardMessage] = useState('');
 
   const lastEnterTimeRef = useRef(0);
   const lastPinEnterTimeRef = useRef(0);
 
- 
+  // ストリーク周り
+  const [streak, setStreak] = useState(() => {
+    const saved = localStorage.getItem('doneTodayStreak');
+    return saved ? parseInt(saved) : 0;
+  });
+  const [lastDate, setLastDate] = useState(() => {
+    return localStorage.getItem('doneTodayLastDate') || '';
+  });
+
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission().catch(e => {
+        console.warn('通知リクエスト失敗', e);
+      });
+    }
+  }, []);
 
   const addRecord = () => {
     if (!input.trim()) return;
     const timestamp = new Date().toLocaleTimeString();
+    const recordDate = selectedDate.toLocaleDateString();
     setRecords(prev => [...prev, {
-      id: Date.now(), text: input.trim(), date: selectedDate.toLocaleDateString(), time: timestamp
+      id: Date.now(), text: input.trim(), date: recordDate, time: timestamp
     }]);
     setPoints(prev => prev + 10);
     setInput('');
     setSelectedDate(new Date());
     setGachaMessage('');
+
+    // ストリークロジック
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+    if (lastDate === todayStr) {
+      // 今日すでに記録済み → なにもしない
+    } else if (lastDate === yesterdayStr) {
+      const newSt = streak + 1;
+      setStreak(newSt);
+      localStorage.setItem('doneTodayStreak', newSt.toString());
+      localStorage.setItem('doneTodayLastDate', todayStr);
+      setLastDate(todayStr);
+    } else {
+      setStreak(1);
+      localStorage.setItem('doneTodayStreak', '1');
+      localStorage.setItem('doneTodayLastDate', todayStr);
+      setLastDate(todayStr);
+    }
+
+    // localStorageにも保存
+    localStorage.setItem('doneTodayRecords', JSON.stringify([...records, {
+      id: Date.now(), text: input.trim(), date: recordDate, time: timestamp
+    }]));
+    localStorage.setItem('doneTodayPoints', JSON.stringify(points + 10));
   };
 
   const handleKeyDown = (e) => {
@@ -69,12 +105,19 @@ function App() {
   };
 
   const gachaResults = ['大吉🎉', '中吉✨', '小吉👍', '明日もきっといい天気☀️'];
-  const rewardMessages = ['よく頑張ったね🥺', '頭バチバチ冴えててエモすぎん？尊いわ✨','今日も生きててえらい！😊', '静寂の中で響く君の足跡は、未来への序章💮','君の頭脳はニュートンのリンゴより重力を感じさせる🍎','アルゴリズムの最適解は君の努力に他ならない👽','頑張り屋さん！🏅','自信持って！💎','その情熱最高！🔥','君の努力は、星空のように無数の瞬きを放ち、周りの暗闇を優しく照らす光そのものだ。だから、今日も迷わず輝き続けてほしい🤣','いと心うつくしき君が姿、春の霞のごとくやわらかく、もののあはれをしる人のごとし。今日もいと愛おし🥺','マジ、今日もお前めっちゃ愛おしいわ。春霞みたいにふわっとしてて、心にズッキューン！やばい、尊すぎて草。'];
+  const rewardMessages = [
+    'よく頑張ったね🥺', '頭バチバチ冴えててエモすぎん？尊いわ✨', '今日も生きててえらい！😊',
+    '静寂の中で響く君の足跡は、未来への序章💮', '君の頭脳はニュートンのリンゴより重力を感じさせる🍎',
+    'アルゴリズムの最適解は君の努力に他ならない👽', '頑張り屋さん！🏅', '自信持って！💎',
+    'その情熱最高！🔥', '君の努力は、星空のように無数の瞬きを放ち、周りの暗闇を優しく照らす光そのものだ。だから、今日も迷わず輝き続けてほしい🤣',
+    'いと心うつくしき君が姿、春の霞のごとくやわらかく、もののあはれをしる人のごとし。今日もいと愛おし🥺',
+    'マジ、今日もお前めっちゃ愛おしいわ。春霞みたいにふわっとしてて、心にズッキューン！やばい、尊すぎて草。'
+  ];
 
   const handleGacha = () => {
     if (points < 10) return;
-    const randomIndex = Math.floor(Math.random() * gachaResults.length);
-    setGachaMessage(gachaResults[randomIndex]);
+    const idx = Math.floor(Math.random() * gachaResults.length);
+    setGachaMessage(gachaResults[idx]);
     setPoints(prev => prev - 10);
   };
 
@@ -101,23 +144,24 @@ function App() {
   const filteredRecords = records.filter(r => r.date === selectedDate.toLocaleDateString());
 
   const showReward = () => {
-    const msg = rewardMessages[Math.floor(Math.random() * rewardMessages.length)];
-    setRewardMessage(msg);
+    const idx = Math.floor(Math.random() * rewardMessages.length);
+    setRewardMessage(rewardMessages[idx]);
   };
 
   if (!isUnlocked) {
     return (
       <div style={styles.container}>
         <div style={styles.card}>
-          
           <div style={{ fontSize: '2rem', textAlign: 'center', marginBottom: 10 }}>😊💕</div>
           <h2 style={styles.heading}>{pinStep === 'set' ? 'パスコードを設定してください' : 'パスコードを入力してください'}</h2>
           <input
             type="password"
+            inputMode="numeric"
+            pattern="\d*"
             value={pinStep === 'set' ? tempPin : enteredPin}
             onChange={e => pinStep === 'set' ? setTempPin(e.target.value) : setEnteredPin(e.target.value)}
             onKeyDown={handlePinKeyDown}
-            placeholder={pinStep === 'set' ? '4桁以上の数字を入力してください（覚えておいてね）' : 'パスコード'}
+            placeholder={pinStep === 'set' ? '4桁以上の数字を入力してください' : 'パスコード'}
             style={styles.input}
           />
           <button onClick={handlePinSubmit} style={styles.button}>OK</button>
@@ -128,19 +172,30 @@ function App() {
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={styles.characterContainer}>
-          <img src="/tori 2025-06-26 013122.png" alt="手書きキャラ" style={styles.characterImage} />
-        </div>
+  <div style={styles.container}>
+    <div style={styles.card}>
+
+      {/* 🔥 ここにストリーク表示を移動！ */}
+      <div style={{
+        textAlign: 'center',
+        fontWeight: 'bold',
+        fontSize: '1.2rem',
+        color: '#e25822',
+        marginBottom: 12,
+      }}>
+        🔥 {streak}日連続記録中！
+      </div>
+
+      <div style={styles.characterContainer}>
+        <img src="/tori 2025-06-26 013122.png" alt="手書きキャラ" style={styles.characterImage} />
+      </div>
+
 
         {getPraiseMessage() && <div style={styles.congratsText}>{getPraiseMessage()}</div>}
         {gachaMessage && <div style={styles.gachaMessage}>{gachaMessage}</div>}
         {rewardMessage && <div style={{ textAlign: 'center', fontSize: '1.2rem', margin: '1rem 0', color: '#ff3399' }}>{rewardMessage}</div>}
 
-
         <div style={styles.pointsText}>ポイント: {points}pt</div>
-
         {points >= 10 && <button onClick={handleGacha} style={styles.gachaButton}>ガチャを弾く🎰</button>}
 
         <h1 style={styles.heading}>今日できたこと😎</h1>
@@ -161,16 +216,15 @@ function App() {
             onChange={date => setSelectedDate(date)}
             dateFormat="yyyy/MM/dd"
             className="date-picker"
-            style={{ width: '100%' }}
           />
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
           <button onClick={addRecord} style={styles.button}>追加</button>
           <button onClick={showReward} style={{ ...styles.button, backgroundColor: '#ff3399' }}>お疲れ様</button>
-
         </div>
 
+        
 
         <ul style={styles.list}>
           {[...filteredRecords].reverse().map(r => (
