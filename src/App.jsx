@@ -107,8 +107,8 @@ const styles = {
     marginBottom: 16,
   },
   characterImage: {
-    width: 150,     // 小さくした
-    height: 150,    // 小さくした
+    width: 200,     // 小さくした
+    height: 200,    // 小さくした
     borderRadius: '50%',
     objectFit: 'contain',  // 見切れ防止
   },
