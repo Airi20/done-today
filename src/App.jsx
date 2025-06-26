@@ -21,11 +21,9 @@ function App() {
   const [isUnlocked, setIsUnlocked] = useState(pin === '' ? true : false);
   const [pinStep, setPinStep] = useState(pin ? 'enter' : 'set');
   const [rewardMessage, setRewardMessage] = useState('');
-
   const lastEnterTimeRef = useRef(0);
   const lastPinEnterTimeRef = useRef(0);
 
-  // ストリーク周り
   const [streak, setStreak] = useState(() => {
     const saved = localStorage.getItem('doneTodayStreak');
     return saved ? parseInt(saved) : 0;
@@ -33,6 +31,10 @@ function App() {
   const [lastDate, setLastDate] = useState(() => {
     return localStorage.getItem('doneTodayLastDate') || '';
   });
+
+  // 編集・削除系
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
 
   useEffect(() => {
     if ('Notification' in window && Notification.permission !== 'granted') {
@@ -46,9 +48,12 @@ function App() {
     if (!input.trim()) return;
     const timestamp = new Date().toLocaleTimeString();
     const recordDate = selectedDate.toLocaleDateString();
-    setRecords(prev => [...prev, {
+    const newRecord = {
       id: Date.now(), text: input.trim(), date: recordDate, time: timestamp
-    }]);
+    };
+    const updated = [...records, newRecord];
+
+    setRecords(updated);
     setPoints(prev => prev + 10);
     setInput('');
     setSelectedDate(new Date());
@@ -76,9 +81,7 @@ function App() {
     }
 
     // localStorageにも保存
-    localStorage.setItem('doneTodayRecords', JSON.stringify([...records, {
-      id: Date.now(), text: input.trim(), date: recordDate, time: timestamp
-    }]));
+    localStorage.setItem('doneTodayRecords', JSON.stringify(updated));
     localStorage.setItem('doneTodayPoints', JSON.stringify(points + 10));
   };
 
@@ -106,12 +109,8 @@ function App() {
 
   const gachaResults = ['大吉🎉', '中吉✨', '小吉👍', '明日もきっといい天気☀️'];
   const rewardMessages = [
-    'よく頑張ったね🥺', '頭バチバチ冴えててエモすぎん？尊いわ✨', '今日も生きててえらい！😊',
-    '静寂の中で響く君の足跡は、未来への序章💮', '君の頭脳はニュートンのリンゴより重力を感じさせる🍎',
-    'アルゴリズムの最適解は君の努力に他ならない👽', '頑張り屋さん！🏅', '自信持って！💎',
-    'その情熱最高！🔥', '君の努力は、星空のように無数の瞬きを放ち、周りの暗闇を優しく照らす光そのものだ。だから、今日も迷わず輝き続けてほしい🤣',
-    'いと心うつくしき君が姿、春の霞のごとくやわらかく、もののあはれをしる人のごとし。今日もいと愛おし🥺',
-    'マジ、今日もお前めっちゃ愛おしいわ。春霞みたいにふわっとしてて、心にズッキューン！やばい、尊すぎて草。'
+    'よく頑張ったね🥺', '今日も生きててえらい！😊', '頭バチバチ冴えててエモすぎん？',
+    '君の努力は星空のように瞬く✨', '🫠日付変わったら本気出そ？by制作主','君の存在、公理として受け入れたい', '普通に要領よくて草w','Tomorrow is another day.🌇','君のセンス、Google検索しても出てこない','まじで理想を具現化して歩いてるって感じ','明日できることは今日やらない🥲','今日のがんばり、猫が見たらゴロゴロ言うやつ🐈','君の一言で、俺の脳内if文全部Trueになった','君の頭脳はニュートンのリンゴより重力を感じさせる🍎','論理も感情も兼ね備えた完全生命体って君のこと','その発想、シリコンバレーが欲しがってるよ','天才すぎてAIが嫉妬してるからね','その才能、地球には収まりきらんぞ👽','公理系ZFCを拡張しても、君のやさしさは証明不可能な独立命題','頑張り屋さん！🏅','人生というコードに、君というバグが発生して嬉しいです（デバッグ不可）','君の魅力はまるで希ガスの安定性','そんなところがさ、意外とみんな見てるんだよ','f(君) → ∞（※魅力が発散）','マジ、尊すぎて草。' ,'俺の幸福度H(x)は、x＝君の笑顔のとき最大値を取る'
   ];
 
   const handleGacha = () => {
@@ -141,55 +140,67 @@ function App() {
     }
   };
 
-  const filteredRecords = records.filter(r => r.date === selectedDate.toLocaleDateString());
-
   const showReward = () => {
     const idx = Math.floor(Math.random() * rewardMessages.length);
     setRewardMessage(rewardMessages[idx]);
   };
 
+  const startEdit = (record) => {
+    setEditingId(record.id);
+    setEditText(record.text);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditText('');
+  };
+
+  const saveEdit = (id) => {
+    const updated = records.map(r =>
+      r.id === id ? { ...r, text: editText } : r
+    );
+    setRecords(updated);
+    localStorage.setItem('doneTodayRecords', JSON.stringify(updated));
+    cancelEdit();
+  };
+
+  const deleteRecord = (id) => {
+    const updated = records.filter(r => r.id !== id);
+    setRecords(updated);
+    localStorage.setItem('doneTodayRecords', JSON.stringify(updated));
+  };
+
+  const filteredRecords = records.filter(r => r.date === selectedDate.toLocaleDateString());
+
   if (!isUnlocked) {
     return (
       <div style={styles.container}>
         <div style={styles.card}>
-          <div style={{ fontSize: '2rem', textAlign: 'center', marginBottom: 10 }}>😊💕</div>
-          <h2 style={styles.heading}>{pinStep === 'set' ? 'パスコードを設定してください' : 'パスコードを入力してください'}</h2>
+          <h2 style={styles.heading}>{pinStep === 'set' ? 'パスコードを設定' : 'パスコードを入力😎'}</h2>
           <input
             type="password"
-            inputMode="numeric"
-            pattern="\d*"
             value={pinStep === 'set' ? tempPin : enteredPin}
             onChange={e => pinStep === 'set' ? setTempPin(e.target.value) : setEnteredPin(e.target.value)}
             onKeyDown={handlePinKeyDown}
-            placeholder={pinStep === 'set' ? '4桁以上の数字を入力してください' : 'パスコード'}
             style={styles.input}
           />
           <button onClick={handlePinSubmit} style={styles.button}>OK</button>
-          {pinError && <div style={{ color: 'red', marginTop: 8 }}>{pinError}</div>}
+          {pinError && <div style={{ color: 'red' }}>{pinError}</div>}
         </div>
       </div>
     );
   }
 
   return (
-  <div style={styles.container}>
-    <div style={styles.card}>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '1.2rem', color: '#e25822', marginBottom: 12 }}>
+          🔥 {streak}日連続記録中！
+        </div>
 
-      {/* 🔥 ここにストリーク表示を移動！ */}
-      <div style={{
-        textAlign: 'center',
-        fontWeight: 'bold',
-        fontSize: '1.2rem',
-        color: '#e25822',
-        marginBottom: 12,
-      }}>
-        🔥 {streak}日連続記録中！
-      </div>
-
-      <div style={styles.characterContainer}>
-        <img src="/tori 2025-06-26 013122.png" alt="手書きキャラ" style={styles.characterImage} />
-      </div>
-
+        <div style={styles.characterContainer}>
+          <img src="/tori 2025-06-26 013122.png" alt="キャラ" style={styles.characterImage} />
+        </div>
 
         {getPraiseMessage() && <div style={styles.congratsText}>{getPraiseMessage()}</div>}
         {gachaMessage && <div style={styles.gachaMessage}>{gachaMessage}</div>}
@@ -210,27 +221,37 @@ function App() {
           />
         </div>
 
-        <div style={{ marginBottom: '1rem' }}>
-          <DatePicker
-            selected={selectedDate}
-            onChange={date => setSelectedDate(date)}
-            dateFormat="yyyy/MM/dd"
-            className="date-picker"
-          />
-        </div>
+        <DatePicker
+          selected={selectedDate}
+          onChange={date => setSelectedDate(date)}
+          dateFormat="yyyy/MM/dd"
+          className="date-picker"
+        />
 
-        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, marginTop: 12 }}>
           <button onClick={addRecord} style={styles.button}>追加</button>
           <button onClick={showReward} style={{ ...styles.button, backgroundColor: '#ff3399' }}>お疲れ様</button>
         </div>
 
-        
-
         <ul style={styles.list}>
           {[...filteredRecords].reverse().map(r => (
             <li key={r.id} style={styles.item}>
-              <div style={styles.text}>{r.text}</div>
-              <div style={styles.timestamp}>{r.date} - {r.time}</div>
+              {editingId === r.id ? (
+                <>
+                  <input value={editText} onChange={e => setEditText(e.target.value)} style={styles.input} />
+                  <button onClick={() => saveEdit(r.id)} style={styles.button}>保存</button>
+                  <button onClick={cancelEdit} style={{ ...styles.button, backgroundColor: 'gray' }}>キャンセル</button>
+                </>
+              ) : (
+                <>
+                  <div style={styles.text}>{r.text}</div>
+                  <div style={styles.timestamp}>{r.date} - {r.time}</div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                    <button onClick={() => startEdit(r)} style={{ ...styles.button, padding: '6px 12px' }}>編集</button>
+                    <button onClick={() => deleteRecord(r.id)} style={{ ...styles.button, backgroundColor: '#dc3545', padding: '6px 12px' }}>削除</button>
+                  </div>
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -316,6 +337,7 @@ const styles = {
     fontSize: '1rem',
     borderRadius: 8,
     border: '1px solid #ccc',
+    marginBottom: 8,
   },
   button: {
     width: '100%',
@@ -325,7 +347,7 @@ const styles = {
     backgroundColor: '#007bff',
     color: 'white',
     border: 'none',
-    marginBottom: 16,
+    marginBottom: 8,
     cursor: 'pointer',
   },
   list: {
